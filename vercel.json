@@ -2,7 +2,7 @@
   "functions": {
     "api/translate.ts": {
       "maxDuration": 30,
-      "runtime": "nodejs20.x"
+      "runtime": "@vercel/node@3.0.0"
     }
   },
   "rewrites": [
