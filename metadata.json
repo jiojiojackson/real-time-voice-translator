@@ -1,0 +1,8 @@
+{
+  "name": "Real-time Voice Translator",
+  "description": "An application that translates spoken Japanese into Chinese in real-time using speech recognition and the Gemini API.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "prompt": ""
+}

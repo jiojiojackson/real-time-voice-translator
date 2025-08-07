@@ -1,0 +1,50 @@
+{
+  "$schema": "../../node_modules/@tauri-apps/cli/schema.json",
+  "build": {
+    "beforeBuildCommand": "",
+    "beforeDevCommand": "",
+    "devPath": "../",
+    "distDir": "../",
+    "withGlobalTauri": true
+  },
+  "package": {
+    "productName": "Real-time Voice Translator",
+    "version": "0.1.0"
+  },
+  "tauri": {
+    "allowlist": {
+      "all": false,
+      "window": {
+        "all": false,
+        "close": true,
+        "maximize": true,
+        "minimize": true,
+        "unmaximize": true
+      },
+      "microphone": {
+        "all": true
+      }
+    },
+    "bundle": {
+      "active": true,
+      "identifier": "com.gemini.realtimetranslator",
+      "targets": "all"
+    },
+    "security": {
+      "csp": null
+    },
+    "updater": {
+      "active": false
+    },
+    "windows": [
+      {
+        "fullscreen": false,
+        "height": 650,
+        "resizable": true,
+        "title": "リアルタイム翻訳 (Real-time Translator)",
+        "width": 950,
+        "decorations": false
+      }
+    ]
+  }
+}

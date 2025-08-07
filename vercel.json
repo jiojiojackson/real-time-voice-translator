@@ -1,0 +1,12 @@
+{
+  "functions": {
+    "api/translate.ts": {
+      "maxDuration": 30,
+      "runtime": "nodejs20.x"
+    }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/translate" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
