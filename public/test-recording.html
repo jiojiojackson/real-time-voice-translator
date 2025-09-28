@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>录音功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .btn {
+            padding: 12px 24px;
+            margin: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn:hover { opacity: 0.8; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        .status.info { background: #d1ecf1; color: #0c5460; }
+        .audio-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+        .recording-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background: red;
+            border-radius: 50%;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎤 录音功能测试</h1>
+        
+        <div id="status" class="status info">
+            请点击"初始化麦克风"开始测试
+        </div>
+
+        <div class="controls">
+            <button id="initBtn" class="btn btn-primary">初始化麦克风</button>
+            <button id="recordBtn" class="btn btn-success" disabled>开始录音</button>
+            <button id="stopBtn" class="btn btn-danger" disabled>停止录音</button>
+            <button id="playBtn" class="btn btn-primary" disabled>播放录音</button>
+        </div>
+
+        <div id="audioInfo" class="audio-info" style="display: none;">
+            <h3>录音信息</h3>
+            <p>文件大小: <span id="fileSize">-</span></p>
+            <p>录音时长: <span id="duration">-</span></p>
+            <p>文件格式: <span id="format">-</span></p>
+        </div>
+
+        <audio id="audioPlayer" controls style="width: 100%; margin: 15px 0; display: none;"></audio>
+    </div>
+
+    <script type="module">
+        import AudioRecorder from './audio-recorder.js';
+
+        class RecordingTest {
+            constructor() {
+                this.recorder = new AudioRecorder();
+                this.isRecording = false;
+                this.recordedBlob = null;
+                this.startTime = null;
+                
+                this.initElements();
+                this.bindEvents();
+                this.checkSupport();
+            }
+
+            initElements() {
+                this.status = document.getElementById('status');
+                this.initBtn = document.getElementById('initBtn');
+                this.recordBtn = document.getElementById('recordBtn');
+                this.stopBtn = document.getElementById('stopBtn');
+                this.playBtn = document.getElementById('playBtn');
+                this.audioInfo = document.getElementById('audioInfo');
+                this.audioPlayer = document.getElementById('audioPlayer');
+                this.fileSize = document.getElementById('fileSize');
+                this.duration = document.getElementById('duration');
+                this.format = document.getElementById('format');
+            }
+
+            bindEvents() {
+                this.initBtn.addEventListener('click', () => this.initMicrophone());
+                this.recordBtn.addEventListener('click', () => this.startRecording());
+                this.stopBtn.addEventListener('click', () => this.stopRecording());
+                this.playBtn.addEventListener('click', () => this.playRecording());
+            }
+
+            checkSupport() {
+                if (!AudioRecorder.isSupported()) {
+                    this.showStatus('浏览器不支持录音功能', 'error');
+                    this.initBtn.disabled = true;
+                } else {
+                    this.showStatus('浏览器支持录音功能，可以开始测试', 'success');
+                }
+            }
+
+            async initMicrophone() {
+                try {
+                    this.showStatus('正在请求麦克风权限...', 'info');
+                    await this.recorder.initialize();
+                    
+                    this.showStatus('麦克风初始化成功！可以开始录音', 'success');
+                    this.initBtn.disabled = true;
+                    this.recordBtn.disabled = false;
+                } catch (error) {
+                    this.showStatus(`麦克风初始化失败: ${error.message}`, 'error');
+                }
+            }
+
+            async startRecording() {
+                try {
+                    this.startTime = Date.now();
+                    await this.recorder.startRecording();
+                    
+                    this.isRecording = true;
+                    this.recordBtn.disabled = true;
+                    this.stopBtn.disabled = false;
+                    this.recordBtn.innerHTML = '🔴 录音中... <span class="recording-indicator"></span>';
+                    
+                    this.showStatus('正在录音中...', 'info');
+                } catch (error) {
+                    this.showStatus(`录音启动失败: ${error.message}`, 'error');
+                }
+            }
+
+            async stopRecording() {
+                try {
+                    const blob = await this.recorder.stopRecording();
+                    const duration = (Date.now() - this.startTime) / 1000;
+                    
+                    this.isRecording = false;
+                    this.recordedBlob = blob;
+                    
+                    this.recordBtn.disabled = false;
+                    this.stopBtn.disabled = true;
+                    this.playBtn.disabled = false;
+                    this.recordBtn.innerHTML = '开始录音';
+                    
+                    // 显示录音信息
+                    this.fileSize.textContent = this.formatFileSize(blob.size);
+                    this.duration.textContent = duration.toFixed(1) + ' 秒';
+                    this.format.textContent = blob.type;
+                    this.audioInfo.style.display = 'block';
+                    
+                    // 创建播放链接
+                    const audioUrl = URL.createObjectURL(blob);
+                    this.audioPlayer.src = audioUrl;
+                    this.audioPlayer.style.display = 'block';
+                    
+                    this.showStatus(`录音完成！文件大小: ${this.formatFileSize(blob.size)}`, 'success');
+                } catch (error) {
+                    this.showStatus(`录音停止失败: ${error.message}`, 'error');
+                }
+            }
+
+            playRecording() {
+                if (this.recordedBlob) {
+                    this.audioPlayer.play();
+                }
+            }
+
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            showStatus(message, type) {
+                this.status.textContent = message;
+                this.status.className = `status ${type}`;
+            }
+        }
+
+        // 启动测试
+        new RecordingTest();
+    </script>
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>实时语音翻译器</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎤 实时语音翻译器</h1>
+            <p>使用 Groq API 进行语音转录和翻译</p>
+        </header>
+
+        <main>
+            <div class="controls">
+                <button id="recordBtn" class="record-btn">
+                    <span class="btn-text">开始实时转录</span>
+                    <span class="recording-indicator"></span>
+                </button>
+                
+                <button id="initMicBtn" class="init-mic-btn" style="display: none;">
+                    🎤 初始化麦克风
+                </button>
+                
+                <a href="/permission-guide.html" id="permissionGuide" class="permission-guide-link" style="display: none;">
+                    ❓ 权限设置帮助
+                </a>
+                
+                <div class="language-selector">
+                    <label for="sourceLang">源语言:</label>
+                    <select id="sourceLang">
+                        <option value="">自动检测</option>
+                        <option value="zh">中文</option>
+                        <option value="en">English</option>
+                        <option value="ja">日本語</option>
+                        <option value="ko">한국어</option>
+                        <option value="fr">Français</option>
+                        <option value="de">Deutsch</option>
+                        <option value="es">Español</option>
+                    </select>
+                    
+                    <label for="targetLang">翻译到:</label>
+                    <select id="targetLang">
+                        <option value="zh">中文</option>
+                        <option value="en">English</option>
+                        <option value="ja">日本語</option>
+                        <option value="ko">한국어</option>
+                        <option value="fr">Français</option>
+                        <option value="de">Deutsch</option>
+                        <option value="es">Español</option>
+                    </select>
+                </div>
+
+                <div class="api-key-settings">
+                    <button id="apiKeyToggle" class="api-key-toggle">🔑 API Key 设置</button>
+                    <div id="apiKeyPanel" class="api-key-panel" style="display: none;">
+                        <h4>Groq API Key 配置</h4>
+                        <div class="api-key-status">
+                            <span id="apiKeyStatus" class="status-text">检查中...</span>
+                        </div>
+                        <div class="api-key-input-group">
+                            <input type="password" id="apiKeyInput" placeholder="输入你的 Groq API Key">
+                            <button id="toggleApiKeyVisibility" class="toggle-visibility">👁️</button>
+                        </div>
+                        <div class="api-key-actions">
+                            <button id="saveApiKey" class="save-api-key-btn">保存 API Key</button>
+                            <button id="testApiKey" class="test-api-key-btn">测试连接</button>
+                        </div>
+                        <div class="api-key-help">
+                            <small>
+                                <a href="https://console.groq.com/keys" target="_blank">获取 Groq API Key</a> |
+                                API Key 将安全保存在本地数据库中
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="segment-settings">
+                    <button id="settingsToggle" class="settings-toggle">⚙️ 智能分段设置</button>
+                    <div id="settingsPanel" class="settings-panel" style="display: none;">
+                        <h4>智能分段参数</h4>
+                        
+                        <div class="setting-group">
+                            <label for="silenceThreshold">静音阈值 (0-100):</label>
+                            <input type="range" id="silenceThreshold" min="0" max="100" value="30">
+                            <span id="silenceThresholdValue">30</span>
+                            <small>值越小越敏感，更容易检测到语音</small>
+                        </div>
+                        
+                        <div class="setting-group">
+                            <label for="pauseDetectionTime">停顿检测时间 (毫秒):</label>
+                            <input type="range" id="pauseDetectionTime" min="200" max="2000" value="800" step="100">
+                            <span id="pauseDetectionTimeValue">800</span>
+                            <small>检测到多长时间的停顿后自动分段</small>
+                        </div>
+                        
+                        <div class="setting-group">
+                            <label for="minSegmentDuration">最小分段时长 (毫秒):</label>
+                            <input type="range" id="minSegmentDuration" min="200" max="3000" value="1000" step="50">
+                            <span id="minSegmentDurationValue">1000</span>
+                            <small>过短的分段会被忽略</small>
+                        </div>
+                        
+                        <div class="setting-group">
+                            <label for="maxSegmentDuration">最大分段时长 (秒):</label>
+                            <input type="range" id="maxSegmentDuration" min="1" max="30" value="15" step="1">
+                            <span id="maxSegmentDurationValue">15</span>
+                            <small>防止单个分段过长</small>
+                        </div>
+                        
+                        <div class="setting-group">
+                            <label for="consecutiveSilenceFrames">连续静音帧数:</label>
+                            <input type="range" id="consecutiveSilenceFrames" min="3" max="20" value="8">
+                            <span id="consecutiveSilenceFramesValue">8</span>
+                            <small>连续多少帧静音后触发分段</small>
+                        </div>
+                        
+                        <div class="setting-actions">
+                            <button id="resetSettings" class="reset-btn">恢复默认</button>
+                            <button id="saveSettings" class="save-btn">保存设置</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-area">
+                <div class="result-card">
+                    <h3>原文 <span id="transcriptionStatus" class="status-indicator"></span></h3>
+                    <div id="originalText" class="text-content">
+                        <div class="temp-status">点击"开始实时转录"按钮，然后开始说话...</div>
+                    </div>
+                </div>
+                
+                <div class="result-card">
+                    <h3>翻译 <span id="translationStatus" class="status-indicator"></span></h3>
+                    <div id="translatedText" class="text-content">
+                        <div class="temp-status">翻译结果将实时显示在这里...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="manual-translate">
+                <h3>手动翻译</h3>
+                <textarea id="manualInput" placeholder="输入要翻译的文本..."></textarea>
+                <button id="translateBtn">翻译</button>
+            </div>
+
+            <div class="audio-upload">
+                <h3>音频文件上传</h3>
+                <div class="upload-area">
+                    <input type="file" id="audioFile" accept="audio/*" style="display: none;">
+                    <button id="uploadBtn" class="upload-btn">选择音频文件</button>
+                    <div id="fileName" class="file-name"></div>
+                    <button id="processBtn" class="process-btn" disabled>转录并翻译</button>
+                </div>
+            </div>
+
+            <div class="history-section">
+                <div class="history-header">
+                    <h3>历史记录</h3>
+                    <button id="refreshHistory">刷新</button>
+                </div>
+                <div id="historyList" class="history-list"></div>
+            </div>
+        </main>
+
+        <div id="status" class="status"></div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
