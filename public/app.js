@@ -860,7 +860,7 @@ class VoiceTranslatorClient {
             transcriptionItem.dataset.segmentId = segmentId;
         }
         
-        const timestamp = new Date().toLocaleTimeString();
+        const timestamp = new Date().toLocaleString('zh-CN');
         const segmentLabel = segmentId && this.activeSegments.has(segmentId) ? 
             ` [分段 ${this.activeSegments.get(segmentId).counter}]` : '';
         
@@ -902,7 +902,7 @@ class VoiceTranslatorClient {
         // 清除临时状态
         this.clearTempStatus();
         
-        const timestamp = new Date().toLocaleTimeString();
+        const timestamp = new Date().toLocaleString('zh-CN');
         const sessionId = `manual-${Date.now()}`;
         
         // 添加原文
